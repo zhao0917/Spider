@@ -22,6 +22,9 @@ End Function
 Public Function split_csv(ByVal file_in$, Optional ByVal save_dir$ = ".", _
     Optional ByVal with_title As Boolean = True, Optional ByVal sep$ = ",", _
     Optional ByVal col& = 0, Optional encoding$ = "acsii")
+    ' 根据字段拆分csv文件，并按字段值保存为多个文件
+    ' 有中文的csv文件需要转码为unicode编码注意不是utf8编码
+    ' 使用unicode编码的文件拆分后，excel不能正确识别','分隔符，需要导入
 '参数说明：
     ' file_in:string 要处理文件的全路径
     ' save_dir : string 拆分后文件的保存目录。 可选，默认和 file_in在同一目录下
@@ -78,7 +81,7 @@ Public Function split_csv(ByVal file_in$, Optional ByVal save_dir$ = ".", _
         ''' 以前未出现的字段，新键一个buf来保存
         If Not dict.exists(filed) Then
             Set buf = New StrBuff
-            Set buf.File = fs.OpenTextFile(basedir & filed & ".csv", _
+            buf.SetFile fs.OpenTextFile(basedir & filed & ".csv", _
                 ForWriting, True, Tristate)
             
             If with_title Then buf.AddLine title  ' 添加 title
@@ -94,7 +97,7 @@ Public Function split_csv(ByVal file_in$, Optional ByVal save_dir$ = ".", _
     ''' 最后写入
     For Each buf In bufs
         buf.WritetoFile
-        buf.File.Close
+        buf.GetFile().Close
     Next
     
     obj_filein.Close
@@ -104,6 +107,7 @@ Public Function split_csv(ByVal file_in$, Optional ByVal save_dir$ = ".", _
     For Each buf In bufs
         Set buf = Nothing
     Next
+    set bufs = Nothing
 
 End Function
 
@@ -149,7 +153,7 @@ Public Function split_csv2(ByVal file_in$, _
                 filenum = FreeFile
                 
                 Open filedir & filed & ".csv" For Output As #filenum
-                buf.FileNumber = filenum
+                buf.SetFile filenum
                 
                 If with_title Then buf.AddLine title
                 
@@ -164,7 +168,7 @@ Public Function split_csv2(ByVal file_in$, _
     
     For Each buf In bufs
         buf.WritetoFile
-        Close #buf.FileNumber
+        Close #buf.GetFile
     Next
 
     Close #filein
